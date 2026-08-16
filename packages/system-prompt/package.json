@@ -7,13 +7,17 @@
   "exports": {
     ".": { "default": "./lib/index.js" },
     "./client": { "default": "./lib/client.js" },
+    "./cordis.patch.yml": "./cordis.patch.yml",
     "./package.json": "./package.json"
   },
-  "files": ["lib"],
+  "files": ["lib", "cordis.patch.yml"],
   "license": "MIT",
   "publishConfig": { "access": "public" },
   "keywords": ["dsh-plugin", "deepseek-harness", "system-prompt", "kakoyo"],
   "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    },
     "client": {
       "inject": [],
       "platform": "web"

@@ -1,0 +1,6 @@
+# @kakoyo/dsh-clock bundle patch: one row, so this package can be installed on
+# its own via `dsh plugin --profile <name> add @kakoyo/dsh-clock`.
+
+- insert:
+    - id: kakoyo-clock
+      name: '@kakoyo/dsh-clock'
