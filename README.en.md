@@ -44,6 +44,16 @@ dsh plugin --profile web add @kakoyo/dsh-system-prompt
 - **System Prompt**: open the **系统提示词** tab, edit, then click **保存（会话内覆盖）** — the override applies only to subsequent steps of the current session (in-memory, no file writes); **恢复默认** reverts it.
 - **Management card**: Settings → Plugins → Plugin config list shows the Kakoyo plugin roster.
 
+## Screenshots
+
+> To be added: drop the images into `docs/screenshots/`, keeping the same file names.
+
+| Feature | Screenshot |
+| --- | --- |
+| Clock (composer tool row, right end) | ![Clock](docs/screenshots/clock.png) |
+| System Prompt (tab editor) | ![System Prompt](docs/screenshots/system-prompt.png) |
+| Management card (plugin config list) | ![Management card](docs/screenshots/settings.png) |
+
 ## Manual install (optional)
 
 If you prefer not to use `dsh plugin add`, `npm install` the packages and add rows to your host composition or agent preset:

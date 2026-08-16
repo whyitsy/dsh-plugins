@@ -44,6 +44,16 @@ dsh plugin --profile web add @kakoyo/dsh-system-prompt
 - **系统提示词**：点击顶部「系统提示词」标签进入编辑器；修改后点「保存（会话内覆盖）」，仅对当前会话后续步骤生效（内存级，不写文件）；「恢复默认」撤销覆盖。
 - **管理卡片**：进入 设置 → 插件 → 插件配置列表，可看到 Kakoyo 插件清单。
 
+## 截图
+
+> 截图待补充：请将图片放入 `docs/screenshots/` 目录，并保持文件名一致。
+
+| 功能 | 截图 |
+| --- | --- |
+| 时钟（聊天框工具行右端） | ![时钟](docs/screenshots/clock.png) |
+| 系统提示词（标签页编辑器） | ![系统提示词](docs/screenshots/system-prompt.png) |
+| 管理卡片（插件配置列表） | ![管理卡片](docs/screenshots/settings.png) |
+
 ## 手动安装（可选）
 
 不想用 `dsh plugin add` 时，也可以直接 `npm install`，再在宿主组合或 agent preset 里手动加行：
