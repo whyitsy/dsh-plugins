@@ -12,31 +12,30 @@ Kakoyo's plugin collection for the [DeepSeek Harness (DSH)](https://github.com/d
 | --- | --- |
 | `@kakoyo/dsh-clock` | Shows the current **date + time (to the second)** at the right end of the composer tool row, refreshing every second. |
 | `@kakoyo/dsh-system-prompt` | Adds a **系统提示词 (System Prompt)** tab beside 对话 / 轨迹 to view and **session-locally override** the current session's system prompt. |
-| `@kakoyo/dsh-kakoyo` | The all-in-one bundle: installs the two above in one command, and shows a management card in **Settings → Plugins → Plugin config list**. |
+| `@kakoyo/dsh-kakoyo` | Shows the Kakoyo plugin management card in **Settings → Plugins → Plugin config list** (standalone; bundles nothing). |
 
 ## Install
 
-### Install everything (recommended)
+Every plugin is a **standalone package** with no interdependencies — install only what you want:
 
 ```sh
+# Clock
+dsh plugin --profile web add @kakoyo/dsh-clock
+
+# System-prompt editor
+dsh plugin --profile web add @kakoyo/dsh-system-prompt
+
+# Management card (optional; just lists the plugins)
 dsh plugin --profile web add @kakoyo/dsh-kakoyo
 ```
 
-This pulls in `@kakoyo/dsh-clock` and `@kakoyo/dsh-system-prompt` too. Restart to take effect:
+Skipping `@kakoyo/dsh-kakoyo` does not affect the other two. Restart to take effect:
 
 ```sh
 dsh web
 ```
 
-### Install individually
-
-```sh
-# Clock only
-dsh plugin --profile web add @kakoyo/dsh-clock
-
-# System-prompt editor only
-dsh plugin --profile web add @kakoyo/dsh-system-prompt
-```
+> There is no more "install everything" bundle: since 0.2.0, `@kakoyo/dsh-kakoyo` is a standalone management card that neither depends on nor bundles the others, so versions are never maintained in more than one place.
 
 ## Usage
 

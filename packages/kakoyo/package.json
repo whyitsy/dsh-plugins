@@ -1,7 +1,7 @@
 {
   "name": "@kakoyo/dsh-kakoyo",
-  "version": "0.1.0",
-  "description": "Unified @kakoyo DeepSeek Harness plugin bundle: installs the clock, system-prompt editor, and a settings management card",
+  "version": "0.2.0",
+  "description": "@kakoyo DeepSeek Harness settings card: shows the Kakoyo plugin roster in Settings → Plugins → Plugin config list (standalone; no bundled dependencies)",
   "type": "module",
   "main": "lib/index.js",
   "exports": {
@@ -22,10 +22,6 @@
       "inject": [],
       "platform": "web"
     }
-  },
-  "dependencies": {
-    "@kakoyo/dsh-clock": "^0.1.0",
-    "@kakoyo/dsh-system-prompt": "^0.1.0"
   },
   "peerDependencies": {
     "@deepseek-ai/cordis": "^4.0.1"

@@ -6,7 +6,7 @@
 
 ## 1. 原则
 
-1. **一套代码，两种安装粒度**：每个包可单独安装，也可用一条命令装全部。靠「每个包都是 profile bundle」实现，**不需要维护两套代码**。
+1. **一套代码，每个包独立安装**：每个包都是 profile bundle、自带 `cordis.patch.yml`，按需单独 `dsh plugin add`；**不再维护「一条命令装全部」的捆绑包**，避免版本号出现在多个位置。
 2. **严格遵循 DSH 官方结构**：`package.json` 的 `dsh.client` / `dsh.bundle.patch` 清单、`lib/index.js`（宿主）/ `lib/client.js`（客户端 `__ModuleLoader__` bundle）、`cordis.patch.yml`、Typert `@Remote` 服务，全部按 DSH 包（`@deepseek-ai/dsh-*`）的写法来。
 3. **命名**：所有包统一 `@kakoyo/dsh-*` 前缀；每个包 `keywords` 含 `dsh-plugin`。
 
@@ -112,25 +112,29 @@ ctx.slots.inject("settings.plugin.item", () =>
 
 上游 `dsh-client-ui-settings-plugins` 还会带 `locale` 命名空间与 `inject`（给卡片注入 controller props）；纯静态信息卡片可以省略，只保留 `id`/`order`。
 
-## 7. 单独装 + 一条命令装全部（bundle 设计）
+## 7. 单独安装（bundle 设计）
 
-每个包都是 bundle，`cordis.patch.yml` 里各插自己那一行；`@kakoyo/dsh-kakoyo` 是「全家桶」bundle，`dependencies` 依赖另外两个，其 patch 插三行。行 `id` 全局稳定，重叠由 DSH「按 id 后写覆盖」自动处理：
+每个包都是 bundle，`cordis.patch.yml` 里各插自己那一行，互不依赖、互不捆绑：
 
 | 包 | `cordis.patch.yml` 内容 | `dependencies` |
 | --- | --- | --- |
 | `@kakoyo/dsh-clock` | `- insert: [{ id: kakoyo-clock, name: '@kakoyo/dsh-clock' }]` | — |
 | `@kakoyo/dsh-system-prompt` | `- insert: [{ id: kakoyo-system-prompt, name: '@kakoyo/dsh-system-prompt' }]` | — |
-| `@kakoyo/dsh-kakoyo` | `- insert:` 三行（id 同上 + `kakoyo-settings`） | `@kakoyo/dsh-clock`, `@kakoyo/dsh-system-prompt` |
+| `@kakoyo/dsh-kakoyo` | `- insert: [{ id: kakoyo-settings, name: '@kakoyo/dsh-kakoyo' }]` | — |
 
 因此：
 
 ```sh
 dsh plugin --profile web add @kakoyo/dsh-clock          # 只装时钟
 dsh plugin --profile web add @kakoyo/dsh-system-prompt  # 只装系统提示词
-dsh plugin --profile web add @kakoyo/dsh-kakoyo         # 一条命令装全部
+dsh plugin --profile web add @kakoyo/dsh-kakoyo         # 只装管理卡片
 ```
 
 `dsh plugin` 是 pnpm 转发器：`add` 后会把声明了 `dsh.bundle.patch` 的依赖加入 `dsh.profile.bundles`，其 patch 作为组合层生效（先于 profile 自己的 `cordis.patch.yml` 与 `--patch`）。
+
+> **为什么取消「全家桶」捆绑包**：早期 `@kakoyo/dsh-kakoyo` 作为全家桶时，其 `dependencies` 里的版本区间与 `cordis.patch.yml` 里的行需要两处维护，且 lockfile 会把它锁到旧版本（曾导致 system-prompt 停在 0.1.0 的 bug）。改为「每包独立」后版本号只存在于各包自己的 `package.json` 一处。
+>
+> 若日后需要「一条命令装全部」，可参照上游 dsh-web-ui 的**聚合包**方案：用 `aggregate.yml` 清单 + `scripts/aggregate.mjs` 自动生成聚合包的 `cordis.patch.yml` 与 `dependencies`（`workspace:*`，发布时 pnpm 自动改写为具体版本），从而仍然只有一处版本来源。参见 https://github.com/zhu1090093659/dsh-web-ui 的 `packages/dsh-web-ui-all` 与 `scripts/aggregate.mjs`。
 
 ## 8. 构建工具链（严格路径）
 
@@ -147,7 +151,7 @@ dsh plugin --profile web add @kakoyo/dsh-kakoyo         # 一条命令装全部
 # —— npm ——
 npm login                                          # 一次性，输入 npm 凭据
 
-# 按依赖顺序发布（@kakoyo/dsh-kakoyo 依赖前两个）
+# 各包独立，无依赖顺序要求；改哪个就发哪个
 npm publish --workspace packages/clock --access public
 npm publish --workspace packages/system-prompt --access public
 npm publish --workspace packages/kakoyo --access public
@@ -158,7 +162,7 @@ git push -u origin main
 gh repo edit --add-topic dsh-plugin                # 或 GitHub 网页 Settings → Topics
 ```
 
-发布顺序必须先 `@kakoyo/dsh-clock`、`@kakoyo/dsh-system-prompt`，再 `@kakoyo/dsh-kakoyo`（后者依赖前两者）。升级版本时先改各包 `version` 再按同样顺序发布。
+包之间没有依赖关系，发布顺序任意。升级时只改该包 `version` 再发布它即可；用户侧用 `dsh plugin --profile web update <pkg>`（或 remove 后再 add）拉取新版本。
 
 ## 10. 新插件 checklist
 
@@ -167,5 +171,5 @@ gh repo edit --add-topic dsh-plugin                # 或 GitHub 网页 Settings 
 - [ ] 宿主逻辑（如有）写成 `{ name, inject, apply }` 或 Typert `@Remote` 服务。
 - [ ] 每个包带 `cordis.patch.yml`（稳定行 `id`）并声明 `dsh.bundle.patch`。
 - [ ] 需要设置卡片时注册 `settings.plugin.item`。
-- [ ] 更新根 README 的包表；若引入跨包依赖，更新 `@kakoyo/dsh-kakoyo` 的 `dependencies` 与 patch。
+- [ ] 更新根 README 的包表；新插件只需带自己的 `cordis.patch.yml`（禁止跨包捆绑依赖）。
 - [ ] `node --check` 通过、`package.json` JSON 校验通过、`git` 提交。

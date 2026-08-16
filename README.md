@@ -12,31 +12,30 @@ Kakoyo 的 [DeepSeek Harness（DSH）](https://github.com/deepseek-ai/deepseek-h
 | --- | --- |
 | `@kakoyo/dsh-clock` | 在聊天框（输入框）工具行右端显示当前**日期 + 时间（精确到秒）**，每秒刷新。 |
 | `@kakoyo/dsh-system-prompt` | 在「对话 / 轨迹」标签旁新增「系统提示词」标签，查看并**会话内覆盖**当前会话的系统提示词。 |
-| `@kakoyo/dsh-kakoyo` | 全家桶：一条命令装齐上面两个；并在「设置 → 插件 → 插件配置列表」里显示管理卡片。 |
+| `@kakoyo/dsh-kakoyo` | 在「设置 → 插件 → 插件配置列表」里显示 Kakoyo 插件管理卡片（独立安装，不捆绑其它包）。 |
 
 ## 安装
 
-### 一次性全部安装（推荐）
+每个插件都是**独立包**，互不依赖，按需单独安装：
 
 ```sh
+# 时钟
+dsh plugin --profile web add @kakoyo/dsh-clock
+
+# 系统提示词编辑器
+dsh plugin --profile web add @kakoyo/dsh-system-prompt
+
+# 管理卡片（可选，仅显示插件清单）
 dsh plugin --profile web add @kakoyo/dsh-kakoyo
 ```
 
-它会顺带装上 `@kakoyo/dsh-clock` 和 `@kakoyo/dsh-system-prompt`。重启后生效：
+想要哪个就装哪个，不装 `@kakoyo/dsh-kakoyo` 也不影响前两个。重启后生效：
 
 ```sh
 dsh web
 ```
 
-### 单独安装
-
-```sh
-# 只要时钟
-dsh plugin --profile web add @kakoyo/dsh-clock
-
-# 只要系统提示词编辑器
-dsh plugin --profile web add @kakoyo/dsh-system-prompt
-```
+> 不再提供「一条命令装全部」的捆绑包：`@kakoyo/dsh-kakoyo` 从 0.2.0 起只是一个独立的管理卡片，不再依赖或捆绑其它包，避免在多个位置重复维护版本号。
 
 ## 使用
 
