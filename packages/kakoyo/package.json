@@ -1,0 +1,25 @@
+{
+  "name": "@kakoyo/dsh-kakoyo",
+  "version": "0.1.0",
+  "description": "Unified settings management card for @kakoyo DeepSeek Harness plugins",
+  "type": "module",
+  "main": "lib/index.js",
+  "exports": {
+    ".": { "default": "./lib/index.js" },
+    "./client": { "default": "./lib/client.js" },
+    "./package.json": "./package.json"
+  },
+  "files": ["lib"],
+  "license": "MIT",
+  "publishConfig": { "access": "public" },
+  "keywords": ["dsh-plugin", "deepseek-harness", "kakoyo", "settings"],
+  "dsh": {
+    "client": {
+      "inject": [],
+      "platform": "web"
+    }
+  },
+  "peerDependencies": {
+    "@deepseek-ai/cordis": "^4.0.1"
+  }
+}

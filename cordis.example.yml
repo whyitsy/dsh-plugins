@@ -1,0 +1,20 @@
+# Example composition rows for loading the @kakoyo plugins.
+#
+# Host plugins (system-prompt) go in the HOST composition or an agent preset.
+# Client plugins (clock, kakoyo settings) only need their `dsh.client` manifest
+# to be picked up by the web client scan once the package is an enabled Loader
+# entry — but they still need a row so the loader enables them.
+#
+# Copy these rows into your host composition or agent preset as appropriate.
+
+# Clock — client-only: shows date+time in the composer tool row.
+- id: kakoyo-clock
+  name: '@kakoyo/dsh-clock'
+
+# System prompt editor — host service + client view tab.
+- id: kakoyo-system-prompt
+  name: '@kakoyo/dsh-system-prompt'
+
+# Unified Kakoyo settings card (Settings -> Plugins -> Plugin config list).
+- id: kakoyo-settings
+  name: '@kakoyo/dsh-kakoyo'

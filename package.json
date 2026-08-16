@@ -1,0 +1,17 @@
+{
+  "name": "@kakoyo/dsh-plugins",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Kakoyo's DeepSeek Harness plugins (clock, system-prompt editor, and a unified settings card)",
+  "type": "module",
+  "license": "MIT",
+  "workspaces": [
+    "packages/*"
+  ],
+  "scripts": {
+    "list": "npm ls --workspaces --depth=0"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}
