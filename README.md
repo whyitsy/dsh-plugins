@@ -23,25 +23,29 @@ The packages in this repo ship hand-written `lib/` modules, so they work directl
 
 ## Install & compose
 
-1. Install into your DSH deployment:
+### Via `dsh plugin add` (recommended)
 
-   ```sh
-   npm install @kakoyo/dsh-clock @kakoyo/dsh-system-prompt @kakoyo/dsh-kakoyo
-   ```
+`@kakoyo/dsh-kakoyo` is a **profile bundle** (it declares `dsh.bundle.patch`), so one command installs it and its two dependencies, and wires them into the profile composition:
 
-2. Add rows to your composition (host composition or agent preset). See [`cordis.example.yml`](cordis.example.yml).
+```sh
+dsh plugin --profile web add @kakoyo/dsh-kakoyo
+```
 
-   - `@kakoyo/dsh-system-prompt` is a **host** service — its row belongs in the host composition (or a preset, if you want it per-session).
-   - `@kakoyo/dsh-clock` and `@kakoyo/dsh-kakoyo` are client-only; they still need a Loader row so the web client scan enables them.
+That `pnpm add`s `@kakoyo/dsh-kakoyo` (pulling in `@kakoyo/dsh-clock` + `@kakoyo/dsh-system-prompt` as dependencies), then reconciles it into `dsh.profile.bundles` so its [`cordis.patch.yml`](packages/kakoyo/cordis.patch.yml) is applied as a composition layer. Restart `dsh --profile web` to pick it up.
 
-3. Rebuild/restart the web shell so the `dsh.client` scan picks up the new bundles.
+> The packages must be published to npm first (`npm publish --workspaces`), so pnpm can resolve them.
 
-## Build toolchain (optional)
+### Manually (host composition / agent preset)
 
-The shipped DSH packages are built with `tsdown` plus the DSH typert/bundle plugins, which produce the `__ModuleLoader__` client wrapper and the `remote.*` client bindings for `@Remote` services.
+1. `npm install @kakoyo/dsh-clock @kakoyo/dsh-system-prompt @kakoyo/dsh-kakoyo`
+2. Add the three rows shown in [`cordis.example.yml`](cordis.example.yml) to your composition.
 
-- This repo's client bundles are already in that wrapper format, so they are usable as-is.
-- The **only** piece that requires the DSH typert build is `@kakoyo/dsh-system-prompt`'s `remote.kakoyoSystemPrompt` client binding: the host `@Remote` methods (`get`/`set`/`clear`) must be reflected by the typert gateway to generate that client binding and the API routes. When you adopt the DSH build pipeline, point it at `packages/system-prompt/lib/index.js` (or migrate it to `src/` TypeScript following the upstream `@deepseek-ai/dsh-goal` service pattern).
+## Build toolchain & the `@Remote` note
+
+The shipped DSH packages are built with `tsdown` plus the DSH typert/bundle plugins, which produce the `__ModuleLoader__` client wrapper and, for `@Remote` services, generated schemas + the client `remote.*` binding.
+
+- **`@kakoyo/dsh-clock` and `@kakoyo/dsh-kakoyo` are client-only** — their bundles are already in the `__ModuleLoader__` format and need no build step; they work as-is.
+- **`@kakoyo/dsh-system-prompt`** needs one client→host RPC (read/override the system prompt). Its host half is a standard Typert `@Remote` service (`get`/`set`/`clear`, mirroring upstream `@deepseek-ai/dsh-goal`). The host methods are reflected at runtime by the DSH typert loader/gateway (`remoteMethods()` → the `src-json` SRC path), so the simple signatures here do not strictly require the build; the strict schema/`.d.ts` path does. If you adopt the DSH `tsdown`+typert pipeline, point it at `packages/system-prompt/lib/index.js` (or migrate it to `src/` TypeScript following the goal-service pattern) to get the fully-generated `remote.kakoyoSystemPrompt` binding.
 
 ## Publish
 

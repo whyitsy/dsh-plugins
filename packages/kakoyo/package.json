@@ -1,23 +1,31 @@
 {
   "name": "@kakoyo/dsh-kakoyo",
   "version": "0.1.0",
-  "description": "Unified settings management card for @kakoyo DeepSeek Harness plugins",
+  "description": "Unified @kakoyo DeepSeek Harness plugin bundle: installs the clock, system-prompt editor, and a settings management card",
   "type": "module",
   "main": "lib/index.js",
   "exports": {
     ".": { "default": "./lib/index.js" },
     "./client": { "default": "./lib/client.js" },
+    "./cordis.patch.yml": "./cordis.patch.yml",
     "./package.json": "./package.json"
   },
-  "files": ["lib"],
+  "files": ["lib", "cordis.patch.yml"],
   "license": "MIT",
   "publishConfig": { "access": "public" },
   "keywords": ["dsh-plugin", "deepseek-harness", "kakoyo", "settings"],
   "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    },
     "client": {
       "inject": [],
       "platform": "web"
     }
+  },
+  "dependencies": {
+    "@kakoyo/dsh-clock": "^0.1.0",
+    "@kakoyo/dsh-system-prompt": "^0.1.0"
   },
   "peerDependencies": {
     "@deepseek-ai/cordis": "^4.0.1"
