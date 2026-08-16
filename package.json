@@ -2,7 +2,7 @@
   "name": "@kakoyo/dsh-plugins",
   "version": "0.1.0",
   "private": true,
-  "description": "Kakoyo's DeepSeek Harness plugins (clock, system-prompt editor, and a unified settings card)",
+  "description": "Kakoyo's DeepSeek Harness plugins (clock and system-prompt editor)",
   "type": "module",
   "license": "MIT",
   "workspaces": [

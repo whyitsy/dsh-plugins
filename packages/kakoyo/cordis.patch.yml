@@ -1,8 +1,0 @@
-# @kakoyo/dsh-kakoyo bundle patch: a single self-contained row, so this
-# package installs on its own via `dsh plugin --profile <name> add
-# @kakoyo/dsh-kakoyo`. It only contributes the settings management card; the
-# clock and system-prompt plugins are installed as separate packages.
-
-- insert:
-    - id: kakoyo-settings
-      name: '@kakoyo/dsh-kakoyo'

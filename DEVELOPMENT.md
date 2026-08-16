@@ -18,7 +18,7 @@
 | 宿主 + 客户端 | `@kakoyo/dsh-system-prompt` | `dsh.client` + 宿主服务 | 宿主提供 `@Remote` 服务，客户端视图调用它。 |
 | bundle（组合层） | 每个包都是 | `dsh.bundle.patch` | 每个包自带 `cordis.patch.yml`，`dsh plugin add` 后自动接入组合。 |
 
-三者都定义在 `package.json` 的 `dsh` 字段里，可同时存在（例如 `@kakoyo/dsh-kakoyo` 同时是 bundle 和 client 插件）。
+三者都定义在 `package.json` 的 `dsh` 字段里，可同时存在（例如 `@kakoyo/dsh-clock` 同时是 bundle 和 client 插件）。
 
 ## 3. 目录规范
 
@@ -99,22 +99,7 @@ export class KakoyoSystemPromptService extends TypertRemoteService {
 
 > **关键坑（务必照做）**：`ctx.remote.<serviceKey>` 是一个**命名空间服务**，直接访问要求 `inject: ["remote.<serviceKey>"]`；但注入它会**死锁**——该服务只在 `$mount` 里才被提供，而 `$mount` 又在本插件的 `apply` 里运行，于是插件永远 `pending`。正确写法是**不注入命名空间**，`$mount` 之后用 `ctx.get("remote.<serviceKey>")`（Cordis 的「免注入读取」API）拿到该命名空间服务。宿主侧参数用方法形参名匹配 lookup（如首参叫 `agent` 会命中 `dsh-agent` 注册的 `agent` lookup，wire 为 `agentId`）；客户端描述符的 `wire` 需与宿主 lookup 的 `wire` 一致。
 
-## 6. 设置卡片（`settings.plugin.item`）
-
-在「设置 → 插件 → 插件配置列表」添加卡片，注册到 `settings.plugin.item`（`list` 槽，`scope: root`）：
-
-```js
-ctx.slots.inject("settings.plugin.item", () =>
-  ctx.slots.register(
-    { name: "settings.plugin.item", id: "kakoyo", order: 1000 },
-    () => react.createElement(KakoyoCard),
-  ),
-);
-```
-
-上游 `dsh-client-ui-settings-plugins` 还会带 `locale` 命名空间与 `inject`（给卡片注入 controller props）；纯静态信息卡片可以省略，只保留 `id`/`order`。
-
-## 7. 单独安装（bundle 设计）
+## 6. 单独安装（bundle 设计）
 
 每个包都是 bundle，`cordis.patch.yml` 里各插自己那一行，互不依赖、互不捆绑：
 
@@ -122,23 +107,21 @@ ctx.slots.inject("settings.plugin.item", () =>
 | --- | --- | --- |
 | `@kakoyo/dsh-clock` | `- insert: [{ id: kakoyo-clock, name: '@kakoyo/dsh-clock' }]` | — |
 | `@kakoyo/dsh-system-prompt` | `- insert: [{ id: kakoyo-system-prompt, name: '@kakoyo/dsh-system-prompt' }]` | — |
-| `@kakoyo/dsh-kakoyo` | `- insert: [{ id: kakoyo-settings, name: '@kakoyo/dsh-kakoyo' }]` | — |
 
 因此：
 
 ```sh
 dsh plugin --profile web add @kakoyo/dsh-clock          # 只装时钟
 dsh plugin --profile web add @kakoyo/dsh-system-prompt  # 只装系统提示词
-dsh plugin --profile web add @kakoyo/dsh-kakoyo         # 只装管理卡片
 ```
 
 `dsh plugin` 是 pnpm 转发器：`add` 后会把声明了 `dsh.bundle.patch` 的依赖加入 `dsh.profile.bundles`，其 patch 作为组合层生效（先于 profile 自己的 `cordis.patch.yml` 与 `--patch`）。
 
-> **为什么取消「全家桶」捆绑包**：早期 `@kakoyo/dsh-kakoyo` 作为全家桶时，其 `dependencies` 里的版本区间与 `cordis.patch.yml` 里的行需要两处维护，且 lockfile 会把它锁到旧版本（曾导致 system-prompt 停在 0.1.0 的 bug）。改为「每包独立」后版本号只存在于各包自己的 `package.json` 一处。
+> **为什么取消「全家桶」捆绑包**：早期全家桶的 `dependencies` 里的版本区间与 `cordis.patch.yml` 里的行需要两处维护，且 lockfile 会把它锁到旧版本。改为「每包独立」后版本号只存在于各包自己的 `package.json` 一处。
 >
 > 若日后需要「一条命令装全部」，可参照上游 dsh-web-ui 的**聚合包**方案：用 `aggregate.yml` 清单 + `scripts/aggregate.mjs` 自动生成聚合包的 `cordis.patch.yml` 与 `dependencies`（`workspace:*`，发布时 pnpm 自动改写为具体版本），从而仍然只有一处版本来源。参见 https://github.com/zhu1090093659/dsh-web-ui 的 `packages/dsh-web-ui-all` 与 `scripts/aggregate.mjs`。
 
-## 8. 构建工具链（严格路径）
+## 7. 构建工具链（严格路径）
 
 上游 DSH 用 TypeScript + `tsdown`（+ DSH bundle/typert 插件）构建：
 
@@ -147,7 +130,7 @@ dsh plugin --profile web add @kakoyo/dsh-kakoyo         # 只装管理卡片
 
 迁移到严格路径需要：`tsconfig.json`、`tsdown` 配置、DSH 的 bundle 插件与 typert 配置（这些构建插件随 DSH 源码仓库分发，未随 npm 包发布）。当前仓库的手写 `lib/` 是构建产物的等价物，功能一致，缺的是严格类型/强 codec。
 
-## 9. 发布流程
+## 8. 发布流程
 
 ```sh
 # —— npm ——
@@ -156,7 +139,6 @@ npm login                                          # 一次性，输入 npm 凭�
 # 各包独立，无依赖顺序要求；改哪个就发哪个
 npm publish --workspace packages/clock --access public
 npm publish --workspace packages/system-prompt --access public
-npm publish --workspace packages/kakoyo --access public
 
 # —— GitHub ——
 git remote add origin git@github.com:<you>/dsh-plugins.git
@@ -166,12 +148,11 @@ gh repo edit --add-topic dsh-plugin                # 或 GitHub 网页 Settings 
 
 包之间没有依赖关系，发布顺序任意。升级时只改该包 `version` 再发布它即可；用户侧用 `dsh plugin --profile web update <pkg>`（或 remove 后再 add）拉取新版本。
 
-## 10. 新插件 checklist
+## 9. 新插件 checklist
 
 - [ ] 包名 `@kakoyo/dsh-<name>`，`keywords` 含 `dsh-plugin`。
 - [ ] 客户端逻辑写成 `__ModuleLoader__` bundle，`dsh.client.inject` 只列真实 `require()` 的 DSH 包。
 - [ ] 宿主逻辑（如有）写成 `{ name, inject, apply }` 或 Typert `@Remote` 服务。
 - [ ] 每个包带 `cordis.patch.yml`（稳定行 `id`）并声明 `dsh.bundle.patch`。
-- [ ] 需要设置卡片时注册 `settings.plugin.item`。
 - [ ] 更新根 README 的包表；新插件只需带自己的 `cordis.patch.yml`（禁止跨包捆绑依赖）。
 - [ ] `node --check` 通过、`package.json` JSON 校验通过、`git` 提交。

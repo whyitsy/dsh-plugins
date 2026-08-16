@@ -12,7 +12,6 @@ Kakoyo 的 [DeepSeek Harness（DSH）](https://github.com/deepseek-ai/deepseek-h
 | --- | --- |
 | `@kakoyo/dsh-clock` | 在聊天框（输入框）工具行右端显示当前**日期 + 时间（精确到秒）**，每秒刷新。 |
 | `@kakoyo/dsh-system-prompt` | 在「对话 / 轨迹」标签旁新增「系统提示词」标签，查看并**会话内覆盖**当前会话的系统提示词。 |
-| `@kakoyo/dsh-kakoyo` | 在「设置 → 插件 → 插件配置列表」里显示 Kakoyo 插件管理卡片（独立安装，不捆绑其它包）。 |
 
 ## 安装
 
@@ -24,24 +23,18 @@ dsh plugin --profile web add @kakoyo/dsh-clock
 
 # 系统提示词编辑器
 dsh plugin --profile web add @kakoyo/dsh-system-prompt
-
-# 管理卡片（可选，仅显示插件清单）
-dsh plugin --profile web add @kakoyo/dsh-kakoyo
 ```
 
-想要哪个就装哪个，不装 `@kakoyo/dsh-kakoyo` 也不影响前两个。重启后生效：
+想要哪个就装哪个，两者互不依赖。重启后生效：
 
 ```sh
 dsh web
 ```
 
-> 不再提供「一条命令装全部」的捆绑包：`@kakoyo/dsh-kakoyo` 从 0.2.0 起只是一个独立的管理卡片，不再依赖或捆绑其它包，避免在多个位置重复维护版本号。
-
 ## 使用
 
 - **时钟**：装好后，聊天输入框工具行右端即显示当前日期时间，无需其他操作。
 - **系统提示词**：点击顶部「系统提示词」标签进入编辑器；修改后点「保存（会话内覆盖）」，仅对当前会话后续步骤生效（内存级，不写文件）；「恢复默认」撤销覆盖。
-- **管理卡片**：进入 设置 → 插件 → 插件配置列表，可看到 Kakoyo 插件清单。
 
 ## 截图
 
@@ -51,14 +44,13 @@ dsh web
 | --- | --- |
 | 时钟（聊天框工具行右端） | ![时钟](docs/screenshots/clock.png) |
 | 系统提示词（标签页编辑器） | ![系统提示词](docs/screenshots/system-prompt.png) |
-| 管理卡片（插件配置列表） | ![管理卡片](docs/screenshots/settings.png) |
 
 ## 手动安装（可选）
 
 不想用 `dsh plugin add` 时，也可以直接 `npm install`，再在宿主组合或 agent preset 里手动加行：
 
 ```sh
-npm install @kakoyo/dsh-clock @kakoyo/dsh-system-prompt @kakoyo/dsh-kakoyo
+npm install @kakoyo/dsh-clock @kakoyo/dsh-system-prompt
 ```
 
 ```yaml
@@ -67,9 +59,6 @@ npm install @kakoyo/dsh-clock @kakoyo/dsh-system-prompt @kakoyo/dsh-kakoyo
 
 - id: kakoyo-system-prompt
   name: '@kakoyo/dsh-system-prompt'
-
-- id: kakoyo-settings
-  name: '@kakoyo/dsh-kakoyo'
 ```
 
 ## 环境要求
