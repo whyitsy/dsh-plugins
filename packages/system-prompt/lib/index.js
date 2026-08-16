@@ -1,11 +1,12 @@
 // Host half: a Typert `@Remote` service exposing the system prompt for one
 // session, plus an in-memory (session-local) override.
 //
-// `get`/`set`/`clear` are marked `@Remote`, so the DSH typert build reflects
-// them into the API gateway and generates the client `remote.kakoyoSystemPrompt`
-// binding. The `__esDecorate`/`__runInitializers` helpers are normally emitted
-// by the TypeScript build; they are inlined here so this plain-JS module is
-// directly usable.
+// `get`/`set`/`clear` are `@Remote` direct methods. The DSH gateway discovers
+// them at runtime through the `typertRemote` binding + `remoteMethods()` (the
+// "SRC" path), so no Typert build artifact is required for the host side. The
+// decorator helpers below are normally emitted by the TypeScript build; they
+// are inlined here and, crucially, the initializers are run in the constructor
+// so the Remote markers actually register on the prototype.
 import { Remote, TypertRemoteService } from "@deepseek-ai/dsh-typert-protocol";
 
 var __runInitializers = function (thisArg, initializers, value) {
@@ -102,35 +103,20 @@ var KakoyoSystemPromptService = (function () {
       _clear_decorators = [Remote("clear")];
 
       __esDecorate(this, null, _get_decorators, {
-        kind: "method",
-        name: "get",
-        static: false,
-        private: false,
-        access: { has: (obj) => "get" in obj, get: (obj) => obj.get },
-        metadata: _metadata
+        kind: "method", name: "get", static: false, private: false,
+        access: { has: (obj) => "get" in obj, get: (obj) => obj.get }, metadata: _metadata
       }, null, _instanceExtraInitializers);
       __esDecorate(this, null, _set_decorators, {
-        kind: "method",
-        name: "set",
-        static: false,
-        private: false,
-        access: { has: (obj) => "set" in obj, get: (obj) => obj.set },
-        metadata: _metadata
+        kind: "method", name: "set", static: false, private: false,
+        access: { has: (obj) => "set" in obj, get: (obj) => obj.set }, metadata: _metadata
       }, null, _instanceExtraInitializers);
       __esDecorate(this, null, _clear_decorators, {
-        kind: "method",
-        name: "clear",
-        static: false,
-        private: false,
-        access: { has: (obj) => "clear" in obj, get: (obj) => obj.clear },
-        metadata: _metadata
+        kind: "method", name: "clear", static: false, private: false,
+        access: { has: (obj) => "clear" in obj, get: (obj) => obj.clear }, metadata: _metadata
       }, null, _instanceExtraInitializers);
 
       if (_metadata) Object.defineProperty(this, Symbol.metadata, {
-        enumerable: true,
-        configurable: true,
-        writable: true,
-        value: _metadata
+        enumerable: true, configurable: true, writable: true, value: _metadata
       });
     }
 
@@ -138,6 +124,8 @@ var KakoyoSystemPromptService = (function () {
 
     constructor(ctx, config = {}) {
       super(ctx, "kakoyoSystemPrompt");
+      // Register the Remote markers on the prototype (see Remote decorators above).
+      __runInitializers(this, _instanceExtraInitializers);
       this.overrides = new Map();
       var self = this;
       ctx.effect(function () {
@@ -153,22 +141,16 @@ var KakoyoSystemPromptService = (function () {
     // Remote: read the current assembled system prompt for one agent.
     async get(agent) {
       var systemPrompt = this.ctx.get("systemPrompt");
-      if (systemPrompt === void 0) return { ok: false, error: "systemPrompt unavailable" };
-      try {
-        var assembly = await systemPrompt.assemble({ agent: agent, scope: agent });
-        return { ok: true, text: renderPrompt(assembly) };
-      } catch (e) {
-        return { ok: false, error: String((e && e.message) || e) };
-      }
+      if (systemPrompt === void 0) throw new Error("systemPrompt unavailable");
+      var assembly = await systemPrompt.assemble({ agent: agent, scope: agent });
+      return { text: renderPrompt(assembly) };
     }
 
     // Remote: replace the system prompt for one agent's subsequent steps.
     set(agent, text) {
-      if (typeof text !== "string") return { ok: false, error: "missing text" };
+      if (typeof text !== "string") throw new Error("missing text");
       var scoped = agent.ctx.get("systemPrompt");
-      if (scoped === void 0 || typeof scoped.section !== "function") {
-        return { ok: false, error: "systemPrompt unavailable for this agent" };
-      }
+      if (scoped === void 0 || typeof scoped.section !== "function") throw new Error("systemPrompt unavailable for this agent");
       var prev = this.overrides.get(agent.id);
       if (prev) {
         try { prev(); } catch (_e) {}
@@ -181,7 +163,7 @@ var KakoyoSystemPromptService = (function () {
         complete: true
       });
       this.overrides.set(agent.id, disposer);
-      return { ok: true };
+      return { applied: true };
     }
 
     // Remote: remove the override, restoring the composed system prompt.
@@ -191,7 +173,7 @@ var KakoyoSystemPromptService = (function () {
         try { prev(); } catch (_e) {}
         this.overrides.delete(agent.id);
       }
-      return { ok: true };
+      return { cleared: true };
     }
   };
 })();

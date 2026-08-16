@@ -90,10 +90,12 @@ export class KakoyoSystemPromptService extends TypertRemoteService {
 
 - `@Remote` 标记的公开实例方法，首参是 `agent`（由网关从线身份解析的活 agent；客户端侧传入的是 `sessionId`）。
 - `super(ctx, serviceKey)` 的 `serviceKey` 决定客户端绑定名 `remote.<serviceKey>`。
-- 客户端 `inject: ["remote", "remote.<serviceKey>"]`，调用 `ctx.remote.<serviceKey>.method(sessionId, ...)`。
-- 返回值必须是 JSON 可序列化。
+- 返回值必须是 JSON 可序列化（业务值直接 return；出错直接 throw，网关会转成 `{ ok: false, error }`）。
+- 装饰器 helper（`__esDecorate`/`__runInitializers`）必须**在构造函数里运行 `__runInitializers(this, ...)`**，否则 `Remote` 标记不会注册到原型上，网关发现不了方法。
 
-**关于构建**：`@Remote` 装饰器标记在运行时由 `dsh-typert-loader` + `dsh-api-gateway` 反射（`remoteMethods()` → `src-json`/SRC 路径），简单签名无需构建即可用；**严格 schema / `.d.ts` / 强 codec** 需要 DSH 的 `tsdown` + typert 构建管线（生成 `./typert` 工件）。本仓库当前以手写 `lib/` 交付（等价于构建产物，走 SRC 路径）；迁移到 `src/*.ts` + `tsdown` 时应照 `@deepseek-ai/dsh-goal` 的 `src/` 源码结构补全 `tsconfig`、`tsdown` 配置和 typert 配置。
+**宿主端（无需构建）**：`dsh-api-gateway` 通过 `typertRemote` 绑定 + `remoteMethods()` 做 SRC 发现，运行时推导 `src-json` 描述符路由到服务——所以手写的 `@Remote` 服务开箱即用。
+
+**客户端（两条路）**：`remote.<serviceKey>` 绑定是「生成产物」。要么用 DSH 的 `tsdown`+typert 构建产出 `./remote` 工件；要么在客户端 `apply` 里手动 `ctx.remote.$mount(contribution)` 挂载。注意：客户端的 `$mount` 要求 **`mode: "strict"` 的 codec**（必须带 `schema.parse`，`src-json` 会被拒绝），所以手写时用「透传 schema」即可（`{ parse: v => v }`）。本仓库 `@kakoyo/dsh-system-prompt` 即采用手动 `$mount` 方案，见 `packages/system-prompt/lib/client.js`。
 
 ## 6. 设置卡片（`settings.plugin.item`）
 

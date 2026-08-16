@@ -1,6 +1,6 @@
 {
   "name": "@kakoyo/dsh-system-prompt",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "View and edit the current session's system prompt (in-memory, session-local override) for the DeepSeek Harness",
   "type": "module",
   "main": "lib/index.js",

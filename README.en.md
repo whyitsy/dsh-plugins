@@ -25,7 +25,7 @@ dsh plugin --profile web add @kakoyo/dsh-kakoyo
 This pulls in `@kakoyo/dsh-clock` and `@kakoyo/dsh-system-prompt` too. Restart to take effect:
 
 ```sh
-dsh --profile web
+dsh web
 ```
 
 ### Install individually

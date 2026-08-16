@@ -1,5 +1,7 @@
 // Client bundle: registers the system-prompt editor as a conversation view tab
-// (a sibling of 对话 / 轨迹), calling the host `@Remote` service.
+// (a sibling of 对话 / 轨迹). Because the DSH Typert build is not used, the
+// `remote.kakoyoSystemPrompt` binding is mounted manually via
+// `ctx.remote.$mount(...)` with strict (pass-through) codecs.
 window.__ModuleLoader__.load({
   id: "@kakoyo/dsh-system-prompt",
   factory: function (require) {
@@ -23,9 +25,71 @@ window.__ModuleLoader__.load({
       document.head.appendChild(tag);
     }
 
-    var inject = ["slots", "remote", "remote.kakoyoSystemPrompt"];
+    // Strict (but pass-through) codecs: the client Remote mount requires
+    // `mode: "strict"` with a `schema.parse`; we validate nothing here.
+    var PASS = { parse: function (v) { return v; } };
+    var STRING = {
+      parse: function (v) {
+        if (typeof v !== "string") throw new Error("expected string");
+        return v;
+      }
+    };
+    var SESSION_ID = "@deepseek-ai/dsh-session/types#SessionId";
 
-    function apply(ctx) {
+    function lookupAgent(wire) {
+      return {
+        name: "agent",
+        wire: wire,
+        source: "lookup",
+        lookup: "agent",
+        codec: { mode: "strict", typeSymbol: SESSION_ID, schema: PASS }
+      };
+    }
+
+    var CONTRIBUTION = {
+      package: "@kakoyo/dsh-system-prompt",
+      descriptors: [
+        {
+          id: "@kakoyo/dsh-system-prompt#kakoyoSystemPrompt/get",
+          service: "kakoyoSystemPrompt",
+          namespace: "kakoyoSystemPrompt",
+          method: "get",
+          invocation: { kind: "direct" },
+          parameters: [lookupAgent("agentId")],
+          result: { mode: "strict", typeSymbol: "GetResult", schema: PASS }
+        },
+        {
+          id: "@kakoyo/dsh-system-prompt#kakoyoSystemPrompt/set",
+          service: "kakoyoSystemPrompt",
+          namespace: "kakoyoSystemPrompt",
+          method: "set",
+          invocation: { kind: "direct" },
+          parameters: [
+            lookupAgent("agentId"),
+            { name: "text", wire: "text", source: "json", codec: { mode: "strict", typeSymbol: "string", schema: STRING } }
+          ],
+          result: { mode: "strict", typeSymbol: "SetResult", schema: PASS }
+        },
+        {
+          id: "@kakoyo/dsh-system-prompt#kakoyoSystemPrompt/clear",
+          service: "kakoyoSystemPrompt",
+          namespace: "kakoyoSystemPrompt",
+          method: "clear",
+          invocation: { kind: "direct" },
+          parameters: [lookupAgent("agentId")],
+          result: { mode: "strict", typeSymbol: "ClearResult", schema: PASS }
+        }
+      ]
+    };
+
+    var inject = ["slots", "remote"];
+
+    async function apply(ctx) {
+      var dispose = await ctx.remote.$mount(CONTRIBUTION);
+      ctx.effect(function () {
+        return function () { dispose(); };
+      });
+
       var remote = ctx.remote.kakoyoSystemPrompt;
 
       function PromptView(props) {
@@ -44,8 +108,8 @@ window.__ModuleLoader__.load({
           var alive = true;
           remote.get(sessionId).then(function (res) {
             if (!alive) return;
-            if (res && res.ok) { setText(res.text); setStatus("ready"); }
-            else { setStatus("error"); setMessage((res && res.error) || "加载失败"); }
+            if (res.ok) { setText(res.value.text); setStatus("ready"); }
+            else { setStatus("error"); setMessage((res.error && res.error.message) || "加载失败"); }
           }).catch(function (e) {
             if (!alive) return;
             setStatus("error"); setMessage(String((e && e.message) || e));
@@ -57,8 +121,8 @@ window.__ModuleLoader__.load({
           setStatus("saving");
           setMessage("");
           remote.set(sessionId, text).then(function (res) {
-            if (res && res.ok) { setStatus("ready"); setMessage("已保存，当前会话后续步骤生效"); }
-            else { setStatus("error"); setMessage((res && res.error) || "保存失败"); }
+            if (res.ok) { setStatus("ready"); setMessage("已保存，当前会话后续步骤生效"); }
+            else { setStatus("error"); setMessage((res.error && res.error.message) || "保存失败"); }
           }).catch(function (e) {
             setStatus("error"); setMessage(String((e && e.message) || e));
           });
@@ -68,11 +132,11 @@ window.__ModuleLoader__.load({
           setStatus("saving");
           setMessage("");
           remote.clear(sessionId).then(function (res) {
-            if (!res || !res.ok) throw new Error((res && res.error) || "恢复失败");
+            if (!res.ok) throw new Error((res.error && res.error.message) || "恢复失败");
             return remote.get(sessionId);
           }).then(function (res) {
-            if (res && res.ok) { setText(res.text); setStatus("ready"); setMessage("已恢复默认"); }
-            else { setStatus("error"); setMessage((res && res.error) || "恢复失败"); }
+            if (res.ok) { setText(res.value.text); setStatus("ready"); setMessage("已恢复默认"); }
+            else { setStatus("error"); setMessage((res.error && res.error.message) || "恢复失败"); }
           }).catch(function (e) {
             setStatus("error"); setMessage(String((e && e.message) || e));
           });
