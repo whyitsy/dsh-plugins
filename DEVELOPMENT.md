@@ -97,6 +97,8 @@ export class KakoyoSystemPromptService extends TypertRemoteService {
 
 **客户端（两条路）**：`remote.<serviceKey>` 绑定是「生成产物」。要么用 DSH 的 `tsdown`+typert 构建产出 `./remote` 工件；要么在客户端 `apply` 里手动 `ctx.remote.$mount(contribution)` 挂载。注意：客户端的 `$mount` 要求 **`mode: "strict"` 的 codec**（必须带 `schema.parse`，`src-json` 会被拒绝），所以手写时用「透传 schema」即可（`{ parse: v => v }`）。本仓库 `@kakoyo/dsh-system-prompt` 即采用手动 `$mount` 方案，见 `packages/system-prompt/lib/client.js`。
 
+> **关键坑（务必照做）**：`ctx.remote.<serviceKey>` 是一个**命名空间服务**，直接访问要求 `inject: ["remote.<serviceKey>"]`；但注入它会**死锁**——该服务只在 `$mount` 里才被提供，而 `$mount` 又在本插件的 `apply` 里运行，于是插件永远 `pending`。正确写法是**不注入命名空间**，`$mount` 之后用 `ctx.get("remote.<serviceKey>")`（Cordis 的「免注入读取」API）拿到该命名空间服务。宿主侧参数用方法形参名匹配 lookup（如首参叫 `agent` 会命中 `dsh-agent` 注册的 `agent` lookup，wire 为 `agentId`）；客户端描述符的 `wire` 需与宿主 lookup 的 `wire` 一致。
+
 ## 6. 设置卡片（`settings.plugin.item`）
 
 在「设置 → 插件 → 插件配置列表」添加卡片，注册到 `settings.plugin.item`（`list` 槽，`scope: root`）：

@@ -149,7 +149,10 @@ var KakoyoSystemPromptService = (function () {
     // Remote: replace the system prompt for one agent's subsequent steps.
     set(agent, text) {
       if (typeof text !== "string") throw new Error("missing text");
-      var scoped = agent.ctx.get("systemPrompt");
+      // Register through the agent's own scoped context so the section lands in
+      // THIS agent's prompt layer (not the global layer). Direct property access
+      // (`agent.ctx.systemPrompt`) keeps the scope for `SystemPrompt.section()`.
+      var scoped = agent.ctx.systemPrompt;
       if (scoped === void 0 || typeof scoped.section !== "function") throw new Error("systemPrompt unavailable for this agent");
       var prev = this.overrides.get(agent.id);
       if (prev) {

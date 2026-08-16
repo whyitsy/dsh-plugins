@@ -90,7 +90,12 @@ window.__ModuleLoader__.load({
         return function () { dispose(); };
       });
 
-      var remote = ctx.remote.kakoyoSystemPrompt;
+      // Read the mounted namespace WITHOUT injecting `remote.kakoyoSystemPrompt`.
+      // Injecting the namespaced service would deadlock: it is only provided by
+      // `$mount`, which runs here, so a dependent can never start. `ctx.get` is
+      // Cordis's documented "read without inject" API and returns the traced
+      // namespace service (get/set/clear resolve the caller context correctly).
+      var remote = ctx.get("remote.kakoyoSystemPrompt");
 
       function PromptView(props) {
         var sessionId = props.sessionId;
