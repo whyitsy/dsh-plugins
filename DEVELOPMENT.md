@@ -141,20 +141,22 @@ dsh plugin --profile web add @kakoyo/dsh-kakoyo         # 一条命令装全部
 
 ## 9. 发布流程
 
-见 [`README.md`](README.md) 的「Publish」章节；核心命令：
-
 ```sh
-# npm（先登录）
-npm login
-npm publish --workspaces --access public   # 注意：@kakoyo/dsh-kakoyo 依赖前两个，需先发布 clock 与 system-prompt
+# —— npm ——
+npm login                                          # 一次性，输入 npm 凭据
 
-# GitHub
+# 按依赖顺序发布（@kakoyo/dsh-kakoyo 依赖前两个）
+npm publish --workspace packages/clock --access public
+npm publish --workspace packages/system-prompt --access public
+npm publish --workspace packages/kakoyo --access public
+
+# —— GitHub ——
 git remote add origin git@github.com:<you>/dsh-plugins.git
 git push -u origin main
-gh repo edit --add-topic dsh-plugin          # 或 GitHub 网页 Settings → Topics
+gh repo edit --add-topic dsh-plugin                # 或 GitHub 网页 Settings → Topics
 ```
 
-发布顺序：先 `@kakoyo/dsh-clock`、`@kakoyo/dsh-system-prompt`，再 `@kakoyo/dsh-kakoyo`（因为它依赖前两者）。
+发布顺序必须先 `@kakoyo/dsh-clock`、`@kakoyo/dsh-system-prompt`，再 `@kakoyo/dsh-kakoyo`（后者依赖前两者）。升级版本时先改各包 `version` 再按同样顺序发布。
 
 ## 10. 新插件 checklist
 

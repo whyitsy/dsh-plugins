@@ -1,72 +1,77 @@
 # @kakoyo/dsh-plugins
 
-Kakoyo's DeepSeek Harness (DSH) plugins, published under the `@kakoyo` npm scope.
+Kakoyo 的 [DeepSeek Harness（DSH）](https://github.com/deepseek-ai/deepseek-harness) 插件合集，统一以 `@kakoyo` 为 npm 作用域。
 
-> **Topic**: this repository is tagged with the `dsh-plugin` topic on GitHub.
+[English](README.en.md) · [开发规范](DEVELOPMENT.md)
 
-## Packages
+> 本仓库已打上 `dsh-plugin` 主题。
 
-| Package | Type | What it does |
-| --- | --- | --- |
-| [`@kakoyo/dsh-clock`](packages/clock) | client-only | Current date + time (to the second) in the composer tool row (`conversation.input.right`). |
-| [`@kakoyo/dsh-system-prompt`](packages/system-prompt) | host + client | View and edit the current session's assembled system prompt, as a `对话`/`轨迹`-style view tab. Saving applies an in-memory, session-local override (no file writes). |
-| [`@kakoyo/dsh-kakoyo`](packages/kakoyo) | client-only | A unified management card in **Settings → Plugins → Plugin config list** for the `@kakoyo` plugin family. |
+## 插件
 
-## How DSH plugins are packaged
+| 插件 | 功能 |
+| --- | --- |
+| `@kakoyo/dsh-clock` | 在聊天框（输入框）工具行右端显示当前**日期 + 时间（精确到秒）**，每秒刷新。 |
+| `@kakoyo/dsh-system-prompt` | 在「对话 / 轨迹」标签旁新增「系统提示词」标签，查看并**会话内覆盖**当前会话的系统提示词。 |
+| `@kakoyo/dsh-kakoyo` | 全家桶：一条命令装齐上面两个；并在「设置 → 插件 → 插件配置列表」里显示管理卡片。 |
 
-A DSH npm package is a normal npm package plus two conventions:
+## 安装
 
-- **Host half** (`lib/index.js`): a Cordis plugin (`{ name, inject, apply }` or a `Service` class). Composed by a row in your host composition or agent preset `cordis.yml`.
-- **Client half** (`lib/client.js`): a `window.__ModuleLoader__.load({ id, factory })` bundle. Declared via the `dsh.client` field in `package.json`; the DSH web shell scans enabled Loader entries, resolves `exports["./client"]`, and serves it as `/plugins/<name>/client.js`.
-
-The packages in this repo ship hand-written `lib/` modules, so they work directly without a build step. To adopt the full TypeScript + `tsdown` pipeline (source maps, `.d.ts`, generated `@Remote` bindings), see "Build toolchain" below.
-
-## Install & compose
-
-### Via `dsh plugin add` (recommended)
-
-`@kakoyo/dsh-kakoyo` is a **profile bundle** (it declares `dsh.bundle.patch`), so one command installs it and its two dependencies, and wires them into the profile composition:
+### 一次性全部安装（推荐）
 
 ```sh
 dsh plugin --profile web add @kakoyo/dsh-kakoyo
 ```
 
-That `pnpm add`s `@kakoyo/dsh-kakoyo` (pulling in `@kakoyo/dsh-clock` + `@kakoyo/dsh-system-prompt` as dependencies), then reconciles it into `dsh.profile.bundles` so its [`cordis.patch.yml`](packages/kakoyo/cordis.patch.yml) is applied as a composition layer. Restart `dsh --profile web` to pick it up.
-
-> The packages must be published to npm first (`npm publish --workspaces`), so pnpm can resolve them.
-
-### Manually (host composition / agent preset)
-
-1. `npm install @kakoyo/dsh-clock @kakoyo/dsh-system-prompt @kakoyo/dsh-kakoyo`
-2. Add the three rows shown in [`cordis.example.yml`](cordis.example.yml) to your composition.
-
-## Build toolchain & the `@Remote` note
-
-The shipped DSH packages are built with `tsdown` plus the DSH typert/bundle plugins, which produce the `__ModuleLoader__` client wrapper and, for `@Remote` services, generated schemas + the client `remote.*` binding.
-
-- **`@kakoyo/dsh-clock` and `@kakoyo/dsh-kakoyo` are client-only** — their bundles are already in the `__ModuleLoader__` format and need no build step; they work as-is.
-- **`@kakoyo/dsh-system-prompt`** needs one client→host RPC (read/override the system prompt). Its host half is a standard Typert `@Remote` service (`get`/`set`/`clear`, mirroring upstream `@deepseek-ai/dsh-goal`). The host methods are reflected at runtime by the DSH typert loader/gateway (`remoteMethods()` → the `src-json` SRC path), so the simple signatures here do not strictly require the build; the strict schema/`.d.ts` path does. If you adopt the DSH `tsdown`+typert pipeline, point it at `packages/system-prompt/lib/index.js` (or migrate it to `src/` TypeScript following the goal-service pattern) to get the fully-generated `remote.kakoyoSystemPrompt` binding.
-
-## Publish
-
-### npm
+它会顺带装上 `@kakoyo/dsh-clock` 和 `@kakoyo/dsh-system-prompt`。重启后生效：
 
 ```sh
-npm login            # once, with your npm credentials
-npm publish --workspaces --access public
+dsh --profile web
 ```
 
-Each package's `package.json` has `publishConfig.access: "public"` and `keywords: ["dsh-plugin", ...]`.
-
-### GitHub
+### 单独安装
 
 ```sh
-git remote add origin git@github.com:<you>/dsh-plugins.git
-git push -u origin main
+# 只要时钟
+dsh plugin --profile web add @kakoyo/dsh-clock
+
+# 只要系统提示词编辑器
+dsh plugin --profile web add @kakoyo/dsh-system-prompt
 ```
 
-Then add the topic on the GitHub repo page: **Settings → Topics → `dsh-plugin`** (or `gh repo edit --add-topic dsh-plugin` after `gh auth login`).
+## 使用
 
-## License
+- **时钟**：装好后，聊天输入框工具行右端即显示当前日期时间，无需其他操作。
+- **系统提示词**：点击顶部「系统提示词」标签进入编辑器；修改后点「保存（会话内覆盖）」，仅对当前会话后续步骤生效（内存级，不写文件）；「恢复默认」撤销覆盖。
+- **管理卡片**：进入 设置 → 插件 → 插件配置列表，可看到 Kakoyo 插件清单。
 
-MIT
+## 手动安装（可选）
+
+不想用 `dsh plugin add` 时，也可以直接 `npm install`，再在宿主组合或 agent preset 里手动加行：
+
+```sh
+npm install @kakoyo/dsh-clock @kakoyo/dsh-system-prompt @kakoyo/dsh-kakoyo
+```
+
+```yaml
+- id: kakoyo-clock
+  name: '@kakoyo/dsh-clock'
+
+- id: kakoyo-system-prompt
+  name: '@kakoyo/dsh-system-prompt'
+
+- id: kakoyo-settings
+  name: '@kakoyo/dsh-kakoyo'
+```
+
+## 环境要求
+
+- 已安装 DeepSeek Harness（`dsh` 命令可用）。
+- 使用 `dsh plugin add` 时需要 `pnpm`。
+
+## 许可
+
+[MIT](LICENSE)
+
+## 开发者
+
+插件结构、构建、发布规范见 [DEVELOPMENT.md](DEVELOPMENT.md)。
